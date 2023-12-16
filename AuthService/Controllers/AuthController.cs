@@ -1,7 +1,13 @@
-﻿using AuthService.Services;
+﻿using AuthService.DTOs;
+using AuthService.Models;
+using AuthService.Services;
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.RegularExpressions;
+using System;
+using System.Threading.Tasks;
 
 namespace AuthService.Controllers
 {
@@ -10,54 +16,77 @@ namespace AuthService.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ISteamUserService _authService;
+        private readonly IMapper _mapper;
+        private const string SteamScheme = "Steam";
+        private const string SteamClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
+        private const string CallbackUri = "/Auth/callback";
 
-        public AuthController(ISteamUserService authService)
+        public AuthController(ISteamUserService authService, IMapper mapper)
         {
-            _authService = authService;
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         [HttpGet("callback")]
         public async Task<IActionResult> CallbackAsync()
         {
             var claimsPrincipal = HttpContext.User;
-            var steamIdClaim = claimsPrincipal.FindFirst(claim => claim.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            var steamIdClaim = claimsPrincipal.FindFirst(claim => claim.Type == SteamClaimType);
             var steamIdUrl = steamIdClaim?.Value;
-            if(steamIdUrl != null)
+
+            if (!string.IsNullOrEmpty(steamIdUrl))
             {
-                string steamId = GetSteamFromUrl(steamIdUrl);
+                string steamId = _authService.GetSteamFromUrl(steamIdUrl);
                 var jwtToken = await _authService.AuthorizeUserAsync(steamId);
-                if (!string.IsNullOrEmpty(jwtToken))
-                {
-                    return Ok(new { token = jwtToken });
-                }
-                else
-                {
-                    return Unauthorized();
-                }
+
+                return !string.IsNullOrEmpty(jwtToken) ? Ok(new { token = jwtToken }) : Unauthorized();
             }
-            else
-            {
-                return Unauthorized();
-            }
+
+            return Unauthorized();
         }
 
         [HttpGet("login")]
         public IActionResult Login()
         {
-            return Challenge(new AuthenticationProperties { RedirectUri = "/Auth/callback" }, "Steam");
+            return Challenge(new AuthenticationProperties { RedirectUri = CallbackUri }, SteamScheme);
         }
 
-        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        //[HttpGet("api/secure-endpoint")]
-        //public IActionResult ApiSecureEndpoint()
-        //{
-        //    return Ok("Сообщение из защиенного JWT метода");
-        //}
-        private static string GetSteamFromUrl(string url)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpPut("update_user")]
+        public async Task<IActionResult> UpdateUserAsync([FromBody] UserDTO userDTO)
         {
-            string pattern = @"\d+";
-            Match match = Regex.Match(url, pattern);
-            return match.Value;
+            if (userDTO == null)
+            {
+                return BadRequest("Данные пользователя не предоставлены.");
+            }
+
+            User user = _mapper.Map<User>(userDTO);
+            bool result = await _authService.UpdateUserAsync(user);
+
+            return result ? Ok("Пользователь успешно обновлен.") : NotFound("Пользователь не найден.");
         }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpGet("getuserbyid")]
+        public async Task<IActionResult> GetUserByIdAsync()
+        {
+            var claimsPrincipal = HttpContext.User;
+            var steamIdClaim = claimsPrincipal.FindFirst(claim => claim.Type == SteamClaimType);
+            var steamIdUrl = steamIdClaim?.Value;
+
+            if (!string.IsNullOrEmpty(steamIdUrl))
+            {
+                string steamId = _authService.GetSteamFromUrl(steamIdUrl);
+                User user = await _authService.GetUserBySteamId(steamId);
+
+                if (user != null)
+                {
+                    UserDTO userDTO = _mapper.Map<UserDTO>(user);
+                    return Ok(userDTO);
+                }
+            }
+
+            return NotFound("Пользователь не найден.");
+        }   
     }
 }

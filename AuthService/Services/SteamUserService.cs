@@ -6,20 +6,20 @@ using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace AuthService.Services
 {
     public class SteamUserService : ISteamUserService
     {
         private readonly SteamSettings _steamSettings;
-        private readonly JwtSettings _jwtSettings;
         private readonly IUserRepository _userRepository;
         private readonly HttpClient _httpClient;
 
-        public SteamUserService(JwtSettings jwtSettings, SteamSettings steamSettings, IHttpClientFactory httpClientFactory, IUserRepository userRepository)
+        public SteamUserService(SteamSettings steamSettings, IHttpClientFactory httpClientFactory, IUserRepository userRepository)
         {
             _steamSettings = steamSettings;
-            _jwtSettings = jwtSettings;
             _userRepository = userRepository;
             _httpClient = httpClientFactory.CreateClient();
         }
@@ -27,32 +27,49 @@ namespace AuthService.Services
         public async Task<string> AuthorizeUserAsync(string steamId)
         {
             var url = $"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={_steamSettings.ApiKey}&steamids={steamId}";
-            var response = await _httpClient.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                return null;
+                var response = await _httpClient.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                var steamResponse = await response.Content.ReadFromJsonAsync<GetSteamUserResponse>();
+                if (steamResponse?.Response?.Players == null || !steamResponse.Response.Players.Any())
+                {
+                    return null;
+                }
+
+                var player = steamResponse.Response.Players[0];
+                await _userRepository.AddUserAsync(new User()
+                {
+                    Name = player.PersonaName,
+                    SteamID = player.SteamId,
+                    AvatarURL = player.Avatar,
+                    DateOfAuth = DateTime.UtcNow
+                });
+
+                return GenerateJwtToken(player.SteamId);
             }
-
-            var steamResponse = await response.Content.ReadFromJsonAsync<GetSteamUserResponse>();
-
-            if (steamResponse?.Response?.Players == null || !steamResponse.Response.Players.Any())
+            catch (Exception ex)
             {
-                return null;
+                return ex.Message;
             }
+        }
 
-            var player = steamResponse.Response.Players[0];
-
-            await _userRepository.AddUserAsync(new User()
+        public async Task<bool> UpdateUserAsync(User user)
+        {
+            var existingUser = _userRepository.GetUserBySteamIdAsync(user.SteamID);
+            if(existingUser != null)
             {
-                Name = player.PersonaName,
-                SteamID = player.SteamId,
-                AvatarURL = player.Avatar,
-                DateOfAuth = DateTime.UtcNow
-
-            });
-
-            return GenerateJwtToken(player.SteamId);
+                await _userRepository.UpdateUserAsync(user);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private string GenerateJwtToken(string steamId)
@@ -63,19 +80,31 @@ namespace AuthService.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_KEY")));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddDays(Convert.ToDouble(_jwtSettings.ExpireDays));
+            var expires = DateTime.UtcNow.AddDays(Convert.ToDouble(5));
 
             var token = new JwtSecurityToken(
-                issuer: _jwtSettings.Issuer,
-                audience: _jwtSettings.Audience,
+                issuer: Environment.GetEnvironmentVariable("JWT_ISSUER"),
+                audience: Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
                 claims: claims,
                 expires: expires,
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public string GetSteamFromUrl(string url)
+        {
+            string pattern = @"\d+";
+            Match match = Regex.Match(url, pattern);
+            return match.Value;
+        }
+
+        public Task<User> GetUserBySteamId(string steamId)
+        {
+            return  _userRepository.GetUserBySteamIdAsync(steamId);
         }
     }
 

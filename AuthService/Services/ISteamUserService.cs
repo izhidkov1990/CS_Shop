@@ -5,6 +5,9 @@ namespace AuthService.Services
 {
     public interface ISteamUserService
     {
-        public Task<string>AuthorizeUserAsync(string steamId);
+        Task<string>AuthorizeUserAsync(string steamId);
+        Task<bool> UpdateUserAsync(User user);
+        string GetSteamFromUrl(string steamUrl);
+        Task<User> GetUserBySteamId(string steamId);
     }
 }

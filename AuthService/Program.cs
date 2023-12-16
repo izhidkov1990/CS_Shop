@@ -17,7 +17,6 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthServiceAPI", Version = "v1" });
 
-    // Настройка Swagger для использования JWT
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -50,10 +49,8 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 
 
 var steamSettings = builder.Configuration.GetSection("Steam").Get<SteamSettings>();
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
 
 builder.Services.AddSingleton(steamSettings);
-builder.Services.AddSingleton(jwtSettings);
 
 builder.Services.AddScoped<ISteamUserService, SteamUserService>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
@@ -75,12 +72,13 @@ builder.Services.AddAuthentication(options =>
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+            ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
+            ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_KEY")))
         };
     });
 
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -4,10 +4,18 @@ namespace AuthService.DTOs
 {
     public class UserDTO
     {
-        public string? SteamId { get; set; }
-        public string? PersonaName { get; set; }
-        public string? ProfileUrl { get; set; }
-        public string? Avatar { get; set; }
+        [Required]
+        [RegularExpression(@"^\d{17}$", ErrorMessage = "Wrong Steam ID number")]
+        public string SteamId { get; set; }
+        [Required]
+        [StringLength(100, MinimumLength = 3)]
+        public string PersonaName { get; set; }
+        public string ProfileUrl { get; set; }
+        public string Avatar { get; set; }
+        [EmailAddress]
+        public string Email { get; set; }
+        [Phone]
+        public string Phone { get; set; }
 
     }
 }

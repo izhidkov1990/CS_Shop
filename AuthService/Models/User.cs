@@ -4,22 +4,24 @@ namespace AuthService.Models
 {
     public class User
     {
-        public User()
-        {
-            Id = Guid.NewGuid();
-        }
+        public Guid Id { get; private set; } = Guid.NewGuid();
+
         [Required]
-        public Guid Id { get; set; }
+        [RegularExpression(@"^\d{17}$", ErrorMessage = "Wrong Steam ID number")]
+        public string SteamID { get; set; }
+
         [Required]
-        public string? SteamID { get; set; }
-        [Required]
-        public string? Name { get; set; }
-        public string? AvatarURL { get; set; }
+        [StringLength(100, MinimumLength = 3)]
+        public string Name { get; set; }
+
+        public string AvatarURL { get; set; }
+
         [EmailAddress]
-        public string? Email { get; set; }
+        public string Email { get; set; }
+
         [Phone]
-        public string? Phone { get; set; }
-        [Required]
-        public DateTime? DateOfAuth { get; set; }
+        public string Phone { get; set; }
+
+        public DateTime DateOfAuth { get; set; } = DateTime.UtcNow;
     }
 }
