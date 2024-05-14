@@ -1,9 +1,6 @@
-using AuthService;
-using AuthService.Repositories;
-using AuthService.Services;
+using ItemService.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -15,7 +12,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthServiceAPI", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "ItemService", Version = "v1", Description = "Test SteamId: 76561199165531336" });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -43,27 +40,17 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
-builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
-var steamSettings = builder.Configuration.GetSection("Steam").Get<SteamSettings>();
-
-builder.Services.AddSingleton(steamSettings);
-
-builder.Services.AddScoped<ISteamUserService, SteamUserService>();
-builder.Services.AddTransient<IUserRepository, UserRepository>();
-
-builder.Services.AddHttpClient();
-
+//Redis Setup
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    var redisConfig = builder.Configuration.GetSection("Redis");
+    options.Configuration = redisConfig["Connection"];
+    options.InstanceName = redisConfig["InstanceName"];
+});
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddSteam()
-    .AddCookie()
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -78,8 +65,8 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
-
+builder.Services.AddHttpClient();
+builder.Services.AddTransient<ISteamItemService, SteamItemService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
@@ -97,13 +84,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-
-app.UseRouting();
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

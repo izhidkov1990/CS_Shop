@@ -19,31 +19,51 @@
         "AllowAutoRedirect": false,
         "UseTracing": true
       }
+    },
+    {
+      "DownstreamPathTemplate": "/auth/getuserbyid",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7135
+        }
+      ],
+      "UpstreamPathTemplate": "/auth/getuserbyid",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
+      },
+      "HttpClientOptions": {
+        "UseCookieContainer": true,
+        "AllowAutoRedirect": false,
+        "UseTracing": true
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/SteamItem/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7137
+        }
+      ],
+      "UpstreamPathTemplate": "/SteamItem/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "LoadBalancerOptions": {
+        "Type": "LeastConnection"
+      },
+      "HttpClientOptions": {
+        "UseCookieContainer": true,
+        "AllowAutoRedirect": false,
+        "UseTracing": true
+      }
     }
-    //{
-    //  "DownstreamPathTemplate": "/auth/test_sec",
-    //  "DownstreamScheme": "https",
-    //  "DownstreamHostAndPorts": [
-    //    {
-    //      "Host": "localhost",
-    //      "Port": 7135
-    //    }
-    //  ],
-    //  "UpstreamPathTemplate": "/auth/test_sec",
-    //  "UpstreamHttpMethod": [ "Get", "Post" ],
-    //  "AuthenticationOptions": {
-    //    "AuthenticationProviderKey": "Bearer",
-    //    "AllowedScopes": []
-    //  },
-    //  "LoadBalancerOptions": {
-    //    "Type": "LeastConnection"
-    //  },
-    //  "HttpClientOptions": {
-    //    "UseCookieContainer": true,
-    //    "AllowAutoRedirect": false,
-    //    "UseTracing": true
-    //  }
-    //}
   ],
   "GlobalConfiguration": {
     "BaseUrl": "https://localhost",
