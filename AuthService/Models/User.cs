@@ -17,10 +17,10 @@ namespace AuthService.Models
         public string AvatarURL { get; set; }
 
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Phone]
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
 
         public DateTime DateOfAuth { get; set; } = DateTime.UtcNow;
     }

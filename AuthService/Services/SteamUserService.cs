@@ -54,7 +54,7 @@ namespace AuthService.Services
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                return null;
             }
         }
 
