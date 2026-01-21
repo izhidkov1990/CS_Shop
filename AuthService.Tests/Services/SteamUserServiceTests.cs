@@ -1,6 +1,9 @@
-﻿using AuthService.Repositories;
+using AuthService.Models;
+using AuthService.Repositories;
 using AuthService.Services;
 using AuthService;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -25,8 +28,10 @@ public class SteamUserServiceTests
 {
     private Mock<IUserRepository> _mockUserRepository;
     private Mock<IHttpClientFactory> _mockHttpClientFactory;
+    private Mock<ILogger<SteamUserService>> _mockLogger;
     private HttpClient _httpClient;
     private SteamSettings _steamSettings;
+    private JwtSettings _jwtSettings;
     private SteamUserService _service;
 
     [SetUp]
@@ -34,6 +39,7 @@ public class SteamUserServiceTests
     {
         _mockUserRepository = new Mock<IUserRepository>();
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
+        _mockLogger = new Mock<ILogger<SteamUserService>>();
 
         var response = new HttpResponseMessage
         {
@@ -41,23 +47,41 @@ public class SteamUserServiceTests
             Content = new StringContent(@"{""response"": {""players"": [{""steamid"": ""76561199165531336"", ""personaname"": ""TestUser"", ""avatar"": ""http://avatar.url""}]}}")
         };
 
-        _httpClient = new HttpClient(new MockHttpMessageHandler(response));
+        _httpClient = new HttpClient(new MockHttpMessageHandler(response))
+        {
+            BaseAddress = new Uri("https://api.steampowered.com/")
+        };
         _mockHttpClientFactory.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(_httpClient);
 
-        _steamSettings = new SteamSettings { /* инициализация настроек */ };
-        _service = new SteamUserService(_steamSettings, _mockHttpClientFactory.Object, _mockUserRepository.Object);
+        _steamSettings = new SteamSettings { ApiKey = "test-key" };
+        _jwtSettings = new JwtSettings
+        {
+            SecretKey = "test_secret_key_1234567890",
+            Issuer = "test-issuer",
+            Audience = "test-audience",
+            ExpireDays = 5
+        };
+
+        _mockUserRepository.Setup(repo => repo.GetUserBySteamIdAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
+        _mockUserRepository.Setup(repo => repo.AddUserAsync(It.IsAny<User>())).ReturnsAsync((User?)null);
+
+        _service = new SteamUserService(
+            Options.Create(_steamSettings),
+            Options.Create(_jwtSettings),
+            _mockHttpClientFactory.Object,
+            _mockUserRepository.Object,
+            _mockLogger.Object);
     }
 
     [Test]
     public async Task AuthorizeUserAsync_GeneratesValidToken_WithCorrectClaims()
     {
-        // Arrange
         var validSteamId = "76561199165531336";
 
-        // Act
         var token = await _service.AuthorizeUserAsync(validSteamId);
 
-        // Assert
+        Assert.IsNotNull(token);
+
         var handler = new JwtSecurityTokenHandler();
         var jsonToken = handler.ReadJwtToken(token);
 
@@ -67,4 +91,3 @@ public class SteamUserServiceTests
         Assert.AreEqual(validSteamId, steamIdClaim);
     }
 }
-

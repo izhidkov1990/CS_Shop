@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace AuthService.Models
 {
@@ -8,13 +8,13 @@ namespace AuthService.Models
 
         [Required]
         [RegularExpression(@"^\d{17}$", ErrorMessage = "Wrong Steam ID number")]
-        public string SteamID { get; set; }
+        public string SteamID { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100, MinimumLength = 3)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        public string AvatarURL { get; set; }
+        public string? AvatarURL { get; set; }
 
         [EmailAddress]
         public string? Email { get; set; }

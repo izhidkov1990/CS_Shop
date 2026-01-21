@@ -1,11 +1,13 @@
-﻿using AuthService.DTOs;
+using AuthService.DTOs;
 using AuthService.Models;
 using AuthService.Services;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace AuthService.Controllers
 {
@@ -17,14 +19,13 @@ namespace AuthService.Controllers
         private readonly IMapper _mapper;
         private readonly ILogger<AuthController> _logger;
         private const string SteamScheme = "Steam";
-        private const string SteamClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
         private const string CallbackUri = "/Auth/callback";
 
         public AuthController(ISteamUserService authService, IMapper mapper, ILogger<AuthController> logger)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _logger = logger; 
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpGet("callback")]
@@ -32,18 +33,24 @@ namespace AuthService.Controllers
         {
             try
             {
-                var claimsPrincipal = HttpContext.User;
-                var steamIdClaim = claimsPrincipal.FindFirst(claim => claim.Type == SteamClaimType);
+                var authResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (!authResult.Succeeded || authResult.Principal == null)
+                {
+                    return Unauthorized();
+                }
+
+                var steamIdClaim = authResult.Principal.FindFirst(ClaimTypes.NameIdentifier);
                 var steamIdUrl = steamIdClaim?.Value;
 
                 if (!string.IsNullOrEmpty(steamIdUrl))
                 {
                     string steamId = _authService.GetSteamFromUrl(steamIdUrl);
                     var jwtToken = await _authService.AuthorizeUserAsync(steamId);
-                    if(jwtToken == null)
+                    if (string.IsNullOrWhiteSpace(jwtToken))
                     {
                         throw new InvalidOperationException("Can't get token");
                     }
+
                     var redirectUrl = $"http://localhost:4200/authcallback?token={jwtToken}";
                     return Redirect(redirectUrl);
                 }
@@ -52,13 +59,13 @@ namespace AuthService.Controllers
             }
             catch (InvalidOperationException invOpEx)
             {
-                _logger.LogError(invOpEx, "Ошибка в CallbackAsync");
-                return BadRequest("Ошибка аутентификации " + invOpEx.Message) ;
+                _logger.LogError(invOpEx, "?????? ? CallbackAsync");
+                return BadRequest("?????? ?????????????? " + invOpEx.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Не известная ошибка в CallbackAsync");
-                return BadRequest("Не известная ошибка при авторизации");
+                _logger.LogError(ex, "?? ????????? ?????? ? CallbackAsync");
+                return BadRequest("?? ????????? ?????? ??? ???????????");
             }
         }
 
@@ -70,23 +77,29 @@ namespace AuthService.Controllers
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPut("update_user")]
-        public async Task<IActionResult> UpdateUserAsync([FromBody] UserDTO userDTO)
+        public async Task<IActionResult> UpdateUserAsync([FromBody] UserUpdateDTO update)
         {
-            if (userDTO == null)
+            if (update == null)
             {
-                return BadRequest("Данные пользователя не предоставлены.");
+                return BadRequest("?????? ???????????? ?? ?????????????.");
             }
 
             try
             {
-                User user = _mapper.Map<User>(userDTO);
-                bool result = await _authService.UpdateUserAsync(user);
-                return result ? Ok("Пользователь успешно обновлен.") : NotFound("Пользователь не найден.");
+                var steamIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrWhiteSpace(steamIdClaim))
+                {
+                    return Unauthorized();
+                }
+
+                string steamId = _authService.GetSteamFromUrl(steamIdClaim);
+                bool result = await _authService.UpdateUserAsync(steamId, update);
+                return result ? Ok("???????????? ??????? ????????.") : NotFound("???????????? ?? ??????.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при обновлении пользователя");
-                return StatusCode(500, "Ошибка сервера при обновлении пользователя");
+                _logger.LogError(ex, "?????? ??? ?????????? ????????????");
+                return StatusCode(500, "?????? ??????? ??? ?????????? ????????????");
             }
         }
 
@@ -95,13 +108,13 @@ namespace AuthService.Controllers
         public async Task<IActionResult> GetUserByIdAsync()
         {
             var claimsPrincipal = HttpContext.User;
-            var steamIdClaim = claimsPrincipal.FindFirst(claim => claim.Type == SteamClaimType);
+            var steamIdClaim = claimsPrincipal.FindFirst(claim => claim.Type == ClaimTypes.NameIdentifier);
             var steamIdUrl = steamIdClaim?.Value;
 
             if (!string.IsNullOrEmpty(steamIdUrl))
             {
                 string steamId = _authService.GetSteamFromUrl(steamIdUrl);
-                User user = await _authService.GetUserBySteamId(steamId);
+                User? user = await _authService.GetUserBySteamId(steamId);
 
                 if (user != null)
                 {
@@ -110,7 +123,7 @@ namespace AuthService.Controllers
                 }
             }
 
-            return NotFound("Пользователь не найден.");
-        }   
+            return NotFound("???????????? ?? ??????.");
+        }
     }
 }

@@ -1,12 +1,11 @@
-﻿using AuthService.DTOs;
+using AuthService.DTOs;
 using AuthService.Models;
 using AuthService.Repositories;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 
 namespace AuthService.Services
@@ -14,24 +13,39 @@ namespace AuthService.Services
     public class SteamUserService : ISteamUserService
     {
         private readonly SteamSettings _steamSettings;
+        private readonly JwtSettings _jwtSettings;
         private readonly IUserRepository _userRepository;
         private readonly HttpClient _httpClient;
+        private readonly ILogger<SteamUserService> _logger;
 
-        public SteamUserService(SteamSettings steamSettings, IHttpClientFactory httpClientFactory, IUserRepository userRepository)
+        public SteamUserService(
+            IOptions<SteamSettings> steamOptions,
+            IOptions<JwtSettings> jwtOptions,
+            IHttpClientFactory httpClientFactory,
+            IUserRepository userRepository,
+            ILogger<SteamUserService> logger)
         {
-            _steamSettings = steamSettings;
-            _userRepository = userRepository;
-            _httpClient = httpClientFactory.CreateClient();
+            _steamSettings = steamOptions?.Value ?? throw new ArgumentNullException(nameof(steamOptions));
+            _jwtSettings = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+            _httpClient = httpClientFactory.CreateClient("SteamApi");
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<string> AuthorizeUserAsync(string steamId)
+        public async Task<string?> AuthorizeUserAsync(string steamId)
         {
-            var url = $"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={_steamSettings.ApiKey}&steamids={steamId}";
+            if (string.IsNullOrWhiteSpace(steamId))
+            {
+                return null;
+            }
+
+            var url = $"ISteamUser/GetPlayerSummaries/v0002/?key={_steamSettings.ApiKey}&steamids={steamId}";
             try
             {
                 var response = await _httpClient.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
                 {
+                    _logger.LogWarning("Steam API returned {StatusCode} for steamId {SteamId}.", response.StatusCode, steamId);
                     return null;
                 }
 
@@ -42,34 +56,64 @@ namespace AuthService.Services
                 }
 
                 var player = steamResponse.Response.Players[0];
-                await _userRepository.AddUserAsync(new User()
+                if (string.IsNullOrWhiteSpace(player.SteamId) || string.IsNullOrWhiteSpace(player.PersonaName))
                 {
-                    Name = player.PersonaName,
-                    SteamID = player.SteamId,
-                    AvatarURL = player.Avatar,
-                    DateOfAuth = DateTime.UtcNow
-                });
+                    return null;
+                }
+
+                var existingUser = await _userRepository.GetUserBySteamIdAsync(player.SteamId);
+                if (existingUser == null)
+                {
+                    await _userRepository.AddUserAsync(new User
+                    {
+                        Name = player.PersonaName,
+                        SteamID = player.SteamId,
+                        AvatarURL = player.Avatar,
+                        DateOfAuth = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    existingUser.Name = player.PersonaName;
+                    existingUser.AvatarURL = player.Avatar;
+                    existingUser.DateOfAuth = DateTime.UtcNow;
+                    await _userRepository.UpdateUserAsync(existingUser);
+                }
 
                 return GenerateJwtToken(player.SteamId);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Steam authorization failed for steamId {SteamId}.", steamId);
                 return null;
             }
         }
 
-        public async Task<bool> UpdateUserAsync(User user)
+        public async Task<bool> UpdateUserAsync(string steamId, UserUpdateDTO update)
         {
-            var existingUser = _userRepository.GetUserBySteamIdAsync(user.SteamID);
-            if(existingUser != null)
-            {
-                await _userRepository.UpdateUserAsync(user);
-                return true;
-            }
-            else
+            if (string.IsNullOrWhiteSpace(steamId) || update == null)
             {
                 return false;
             }
+
+            var existingUser = await _userRepository.GetUserBySteamIdAsync(steamId);
+            if (existingUser == null)
+            {
+                return false;
+            }
+
+            if (update.Email != null)
+            {
+                existingUser.Email = update.Email;
+            }
+
+            if (update.Phone != null)
+            {
+                existingUser.Phone = update.Phone;
+            }
+
+            await _userRepository.UpdateUserAsync(existingUser);
+            return true;
         }
 
         private string GenerateJwtToken(string steamId)
@@ -77,16 +121,17 @@ namespace AuthService.Services
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, steamId),
+                new Claim(ClaimTypes.NameIdentifier, steamId),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_KEY")));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddDays(Convert.ToDouble(5));
+            var expires = DateTime.UtcNow.AddDays(_jwtSettings.ExpireDays);
 
             var token = new JwtSecurityToken(
-                issuer: Environment.GetEnvironmentVariable("JWT_ISSUER"),
-                audience: Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
                 claims: claims,
                 expires: expires,
                 signingCredentials: creds
@@ -97,14 +142,19 @@ namespace AuthService.Services
 
         public string GetSteamFromUrl(string url)
         {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return string.Empty;
+            }
+
             string pattern = @"\d+";
             Match match = Regex.Match(url, pattern);
             return match.Value;
         }
 
-        public Task<User> GetUserBySteamId(string steamId)
+        public Task<User?> GetUserBySteamId(string steamId)
         {
-            return  _userRepository.GetUserBySteamIdAsync(steamId);
+            return _userRepository.GetUserBySteamIdAsync(steamId);
         }
     }
 
