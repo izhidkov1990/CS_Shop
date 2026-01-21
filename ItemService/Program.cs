@@ -7,12 +7,11 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "ItemService", Version = "v1", Description = "Test SteamId: 76561199165531336" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "ItemService", Version = "v1", Description = "Steam item service API" });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -21,7 +20,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Введите JWT с префиксом 'Bearer' в поле"
+        Description = "Enter a JWT with the 'Bearer' prefix in the field"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement

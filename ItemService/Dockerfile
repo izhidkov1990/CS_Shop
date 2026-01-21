@@ -25,13 +25,4 @@ COPY --from=publish /app/publish .
 # Copy SSL certificate
 COPY ["AuthService/aspnetapp.pfx", "./"]
 
-# Set environment variables for Kestrel HTTPS configuration
-ENV ASPNETCORE_URLS="https://+;http://+"
-ENV ASPNETCORE_Kestrel__Certificates__Default__Password="Zx02071990"
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path="./aspnetapp.pfx"
-
-ENV JWT_SECRET_KEY="!Ghjuhfvvbcn02071990"
-ENV JWT_ISSUER="cs_shop"
-ENV JWT_AUDIENCE="cs_shop_users"
-
 ENTRYPOINT ["dotnet", "ItemService.dll"]

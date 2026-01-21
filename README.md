@@ -69,3 +69,12 @@ Local secrets live in `AuthService/appsettings.Local.json` and are ignored by gi
 - `Steam:ApiKey`
 - `Jwt:SecretKey`, `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpireDays`
 - `ConnectionStrings:DefaultConnection`
+
+## Docker Configuration
+Docker secrets live in `.env.local` (ignored by git). Fill in:
+- `ConnectionStrings__DefaultConnection`
+- `Steam__ApiKey`
+- `Jwt__SecretKey`, `Jwt__Issuer`, `Jwt__Audience`, `Jwt__ExpireDays`
+- `JWT_SECRET_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`
+- `ASPNETCORE_Kestrel__Certificates__Default__Password`
+- `POSTGRES_PASSWORD`

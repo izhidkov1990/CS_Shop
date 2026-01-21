@@ -1,4 +1,3 @@
-
 # Base image with ASP.NET runtime
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
@@ -9,16 +8,16 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["AuthService/AuthService.csproj", "AuthService/"]
-RUN dotnet restore "./AuthService/./AuthService.csproj"
+COPY ["ApiGateway/ApiGateway.csproj", "ApiGateway/"]
+RUN dotnet restore "./ApiGateway/./ApiGateway.csproj"
 COPY . .
-WORKDIR "/src/AuthService"
-RUN dotnet build "./AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/ApiGateway"
+RUN dotnet build "./ApiGateway.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish stage for preparing release artifacts
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./ApiGateway.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Final stage/image
 FROM base AS final
@@ -31,4 +30,4 @@ COPY ["AuthService/aspnetapp.pfx", "./"]
 COPY --from=publish /app/publish .
 
 # Start application
-ENTRYPOINT ["dotnet", "AuthService.dll"]
+ENTRYPOINT ["dotnet", "ApiGateway.dll"]

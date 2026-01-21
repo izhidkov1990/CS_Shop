@@ -8,14 +8,10 @@ services:
     ports:
       - "5079:80"
       - "7135:443"
+    env_file:
+      - .env.local
     environment:
       - ASPNETCORE_URLS=https://+;http://+
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=Zx02071990
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/aspnetapp.pfx
-      - ConnectionStrings__DefaultConnection=Host=UserPGDB;Port=5432;Database=postgres;Username=postgres;Password=!Zx02071990
-      - JWT_SECRET_KEY=!Ghjuhfvvbcn02071990
-      - JWT_ISSUER=cs_shop
-      - JWT_AUDIENCE=cs_shop_users
     depends_on:
       - db
       - redis
@@ -27,25 +23,34 @@ services:
     ports:
       - "7136:80"
       - "7137:443"
+    env_file:
+      - .env.local
     environment:
       - ASPNETCORE_URLS=https://+;http://+
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=Zx02071990
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/aspnetapp.pfx
-      - ConnectionStrings__DefaultConnection=Host=UserPGDB;Port=5432;Database=postgres;Username=postgres;Password=!Zx02071990
-      - JWT_SECRET_KEY=!Ghjuhfvvbcn02071990
-      - JWT_ISSUER=cs_shop
-      - JWT_AUDIENCE=cs_shop_users
     depends_on:
       - db
       - redis
 
+  apigateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    ports:
+      - "5166:80"
+      - "7245:443"
+    env_file:
+      - .env.local
+    environment:
+      - ASPNETCORE_URLS=https://+;http://+
+    depends_on:
+      - authservice
+      - itemservice
+
   db:
     image: postgres
     container_name: UserPGDB
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "!Zx02071990"
+    env_file:
+      - .env.local
     ports:
       - "5433:5432"
     volumes:
