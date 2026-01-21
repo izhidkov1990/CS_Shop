@@ -15,7 +15,7 @@ public class UserModelTests
             SteamID = "12345678901234567",
             Name = "Test User",
             Email = "test@example.com",
-            Phone = "+79875582156"
+            Phone = "+79875580000"
         };
         var context = new ValidationContext(user, null, null);
         var results = new List<ValidationResult>();

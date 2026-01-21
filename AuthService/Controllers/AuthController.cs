@@ -48,7 +48,7 @@ namespace AuthService.Controllers
                     var jwtToken = await _authService.AuthorizeUserAsync(steamId);
                     if (string.IsNullOrWhiteSpace(jwtToken))
                     {
-                        throw new InvalidOperationException("Can't get token");
+                        throw new InvalidOperationException("Unable to issue token.");
                     }
 
                     var redirectUrl = $"http://localhost:4200/authcallback?token={jwtToken}";
@@ -59,13 +59,13 @@ namespace AuthService.Controllers
             }
             catch (InvalidOperationException invOpEx)
             {
-                _logger.LogError(invOpEx, "?????? ? CallbackAsync");
-                return BadRequest("?????? ?????????????? " + invOpEx.Message);
+                _logger.LogError(invOpEx, "Error in CallbackAsync");
+                return BadRequest("Authentication error: " + invOpEx.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "?? ????????? ?????? ? CallbackAsync");
-                return BadRequest("?? ????????? ?????? ??? ???????????");
+                _logger.LogError(ex, "Unexpected error in CallbackAsync");
+                return BadRequest("Unexpected error during authorization.");
             }
         }
 
@@ -81,7 +81,7 @@ namespace AuthService.Controllers
         {
             if (update == null)
             {
-                return BadRequest("?????? ???????????? ?? ?????????????.");
+                return BadRequest("User data was not provided.");
             }
 
             try
@@ -94,12 +94,12 @@ namespace AuthService.Controllers
 
                 string steamId = _authService.GetSteamFromUrl(steamIdClaim);
                 bool result = await _authService.UpdateUserAsync(steamId, update);
-                return result ? Ok("???????????? ??????? ????????.") : NotFound("???????????? ?? ??????.");
+                return result ? Ok("User updated successfully.") : NotFound("User not found.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "?????? ??? ?????????? ????????????");
-                return StatusCode(500, "?????? ??????? ??? ?????????? ????????????");
+                _logger.LogError(ex, "Error while updating user");
+                return StatusCode(500, "Server error while updating user.");
             }
         }
 
@@ -123,7 +123,7 @@ namespace AuthService.Controllers
                 }
             }
 
-            return NotFound("???????????? ?? ??????.");
+            return NotFound("User not found.");
         }
     }
 }
