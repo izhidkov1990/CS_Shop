@@ -25,11 +25,6 @@ namespace AuthService
         public int ExpireDays { get; set; } = 5;
     }
 
-    public class CorsSettings
-    {
-        public string[] AllowedOrigins { get; set; } = Array.Empty<string>();
-    }
-
     public class DevAuthSettings
     {
         public bool Enabled { get; set; }

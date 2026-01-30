@@ -11,6 +11,11 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var solutionRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.FullName;
+if (!string.IsNullOrWhiteSpace(solutionRoot))
+{
+    builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Local.json"), optional: true, reloadOnChange: true);
+}
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 var devAuthSettings = builder.Configuration.GetSection("DevAuth").Get<DevAuthSettings>() ?? new DevAuthSettings();
@@ -129,6 +134,7 @@ builder.Services.AddAuthentication(options =>
     .AddSteam("Steam", options =>
     {
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.ApplicationKey = builder.Configuration["Steam:ApiKey"] ?? string.Empty;
     });
 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));

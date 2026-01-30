@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- Disable workload resolver to avoid missing SDK workload locator tooling on this machine. -->
+    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+    <!-- Move build artifacts to a dedicated workspace folder to avoid locked obj/bin writes. -->
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory).build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory).build\bin\$(MSBuildProjectName)\</BaseOutputPath>
+  </PropertyGroup>
+</Project>

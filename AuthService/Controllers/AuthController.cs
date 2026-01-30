@@ -23,6 +23,7 @@ namespace AuthService.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly IHostEnvironment _environment;
         private readonly DevAuthSettings _devAuthSettings;
+        private readonly string _frontendCallbackUrl;
         private const string SteamScheme = "Steam";
         private const string CallbackUri = "/Auth/callback";
 
@@ -32,7 +33,8 @@ namespace AuthService.Controllers
             IMapper mapper,
             ILogger<AuthController> logger,
             IHostEnvironment environment,
-            IOptions<DevAuthSettings> devAuthOptions)
+            IOptions<DevAuthSettings> devAuthOptions,
+            IConfiguration configuration)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _devAuthService = devAuthService ?? throw new ArgumentNullException(nameof(devAuthService));
@@ -40,6 +42,10 @@ namespace AuthService.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _devAuthSettings = devAuthOptions?.Value ?? new DevAuthSettings();
+            var configuredCallbackUrl = configuration?["Frontend:AuthCallbackUrl"];
+            _frontendCallbackUrl = string.IsNullOrWhiteSpace(configuredCallbackUrl)
+                ? "http://localhost:4200/authcallback"
+                : configuredCallbackUrl;
         }
 
         [HttpGet("callback")]
@@ -65,7 +71,8 @@ namespace AuthService.Controllers
                         throw new InvalidOperationException("Unable to issue token.");
                     }
 
-                    var redirectUrl = $"http://localhost:4200/authcallback?token={jwtToken}";
+                    var separator = _frontendCallbackUrl.Contains('?') ? "&" : "?";
+                    var redirectUrl = $"{_frontendCallbackUrl}{separator}token={jwtToken}";
                     return Redirect(redirectUrl);
                 }
 

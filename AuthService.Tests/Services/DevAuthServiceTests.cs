@@ -1,3 +1,4 @@
+using AuthService;
 using AuthService.DTOs;
 using AuthService.Models;
 using AuthService.Repositories;

@@ -1,14 +1,19 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
-public class SteamAsset
+namespace ItemService.Models
 {
-    public int AppId { get; set; }
-    public string ContextId { get; set; }
-    public string AssetId { get; set; }
-    public string ClassId { get; set; }
-    public string InstanceId { get; set; }
-    public string Amount { get; set; }
-    [JsonProperty("hide_in_china")]
-    public int HideInChina { get; set; }
-    public int Pos { get; set; }
+    public class SteamAsset
+    {
+        public int AppId { get; set; }
+        public string ContextId { get; set; } = string.Empty;
+        public string AssetId { get; set; } = string.Empty;
+        public string ClassId { get; set; } = string.Empty;
+        public string InstanceId { get; set; } = string.Empty;
+        public string Amount { get; set; } = string.Empty;
+
+        [JsonProperty("hide_in_china")]
+        public int HideInChina { get; set; }
+
+        public int Pos { get; set; }
+    }
 }

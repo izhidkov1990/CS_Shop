@@ -1,4 +1,5 @@
 ﻿using ItemService.Exceptions;
+using ItemService.Models;
 using ItemService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -26,10 +27,15 @@ namespace ItemService.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpGet]
         [Route("GetSteamItems")]
-        public async Task<ActionResult<IEnumerable<SteamAsset>>> GetAllSteamItems([FromQuery] string steamId)
+        public async Task<ActionResult<IEnumerable<SteamItem>>> GetAllSteamItems([FromQuery] string steamId)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(steamId))
+                {
+                    return BadRequest("steamId is required.");
+                }
+
                 var steamItems = await _steamItemService.GetItemsFromSteamAPI(steamId, AppId.ToString(), ContextId.ToString());
                 return Ok(steamItems);
             }
@@ -52,6 +58,11 @@ namespace ItemService.Controllers
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(steamId))
+                {
+                    return BadRequest("steamId is required.");
+                }
+
                 await _steamItemService.ClearCacheAsync(steamId, AppId.ToString(), ContextId.ToString());
                 return Ok("Cache successfully cleared");
             }

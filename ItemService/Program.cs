@@ -1,11 +1,17 @@
 using ItemService.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var solutionRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.FullName;
+if (!string.IsNullOrWhiteSpace(solutionRoot))
+{
+    builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Local.json"), optional: true, reloadOnChange: true);
+}
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -43,24 +49,38 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     var redisConfig = builder.Configuration.GetSection("Redis");
-    options.Configuration = redisConfig["Connection"];
+    var redisConnection = redisConfig["Connection"];
+    if (string.IsNullOrWhiteSpace(redisConnection) && builder.Environment.IsDevelopment())
+    {
+        redisConnection = "localhost:6379";
+    }
+    options.Configuration = redisConnection;
     options.InstanceName = redisConfig["InstanceName"];
 });
 builder.Services.AddAuthentication(options =>
 {
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
     .AddJwtBearer(options =>
     {
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
+        var jwtAudience = builder.Configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+        var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+        if (string.IsNullOrWhiteSpace(jwtSecret))
+        {
+            throw new InvalidOperationException("JWT secret key is missing. Set Jwt:SecretKey or JWT_SECRET_KEY.");
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
-            ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_KEY")))
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
         };
     });
 
@@ -86,6 +106,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

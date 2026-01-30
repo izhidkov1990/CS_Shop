@@ -35,7 +35,7 @@ namespace ItemService.Services
                 }
                 using var content = response.Content;
                 var result = await content.ReadAsStringAsync();
-                steamInventory = JsonConvert.DeserializeObject<SteamInventory>(result);
+                steamInventory = JsonConvert.DeserializeObject<SteamInventory>(result) ?? new SteamInventory();
                 var serializedData = JsonConvert.SerializeObject(steamInventory);
                 await _distributedCache.SetStringAsync(cacheKey, serializedData, new DistributedCacheEntryOptions
                 {
@@ -45,7 +45,7 @@ namespace ItemService.Services
             }
             else
             {
-                steamInventory = JsonConvert.DeserializeObject<SteamInventory>(cachedData);
+                steamInventory = JsonConvert.DeserializeObject<SteamInventory>(cachedData) ?? new SteamInventory();
             }
             var steamItems = CreateSteamItemsList(steamInventory);
             return steamItems;
