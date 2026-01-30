@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "docker:infra-up",
+      "type": "shell",
+      "command": "docker compose up -d db redis",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build AuthService",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/AuthService/AuthService.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build ItemService",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/ItemService/ItemService.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build ApiGateway",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/ApiGateway/ApiGateway.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "prelaunch:AuthService",
+      "dependsOn": [
+        "docker:infra-up",
+        "build AuthService"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "prelaunch:ItemService",
+      "dependsOn": [
+        "docker:infra-up",
+        "build ItemService"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "prelaunch:ApiGateway",
+      "dependsOn": [
+        "docker:infra-up",
+        "build ApiGateway"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
