@@ -7,7 +7,7 @@
       "request": "launch",
       "preLaunchTask": "prelaunch:AuthService",
       "program": "${workspaceFolder}/.build/bin/AuthService/Debug/net8.0/AuthService.dll",
-      "cwd": "${workspaceFolder}/AuthService",
+      "cwd": "${workspaceFolder}/src/AuthService",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -22,7 +22,7 @@
       "request": "launch",
       "preLaunchTask": "prelaunch:ItemService",
       "program": "${workspaceFolder}/.build/bin/ItemService/Debug/net8.0/ItemService.dll",
-      "cwd": "${workspaceFolder}/ItemService",
+      "cwd": "${workspaceFolder}/src/ItemService",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -37,7 +37,7 @@
       "request": "launch",
       "preLaunchTask": "prelaunch:ApiGateway",
       "program": "${workspaceFolder}/.build/bin/ApiGateway/Debug/net8.0/ApiGateway.dll",
-      "cwd": "${workspaceFolder}/ApiGateway",
+      "cwd": "${workspaceFolder}/src/ApiGateway",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",

@@ -3,8 +3,8 @@ version: '3.8'
 services:
   authservice:
     build: 
-      context: .
-      dockerfile: AuthService/Dockerfile
+      context: ..
+      dockerfile: src/AuthService/Dockerfile
     ports:
       - "5079:80"
       - "7135:443"
@@ -19,8 +19,8 @@ services:
 
   itemservice:
     build: 
-      context: .
-      dockerfile: ItemService/Dockerfile
+      context: ..
+      dockerfile: src/ItemService/Dockerfile
     ports:
       - "7136:80"
       - "7137:443"
@@ -35,8 +35,8 @@ services:
 
   apigateway:
     build:
-      context: .
-      dockerfile: ApiGateway/Dockerfile
+      context: ..
+      dockerfile: src/ApiGateway/Dockerfile
     ports:
       - "5166:80"
       - "7245:443"

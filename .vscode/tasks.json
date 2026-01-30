@@ -4,7 +4,7 @@
     {
       "label": "docker:infra-up",
       "type": "shell",
-      "command": "docker compose -f docker-compose.yml up -d db redis",
+      "command": "docker compose -f deploy/docker-compose.yml up -d db redis",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -16,7 +16,7 @@
       "command": "dotnet",
       "args": [
         "build",
-        "${workspaceFolder}/AuthService/AuthService.csproj"
+        "${workspaceFolder}/src/AuthService/AuthService.csproj"
       ],
       "problemMatcher": "$msCompile"
     },
@@ -26,7 +26,7 @@
       "command": "dotnet",
       "args": [
         "build",
-        "${workspaceFolder}/ItemService/ItemService.csproj"
+        "${workspaceFolder}/src/ItemService/ItemService.csproj"
       ],
       "problemMatcher": "$msCompile"
     },
@@ -36,7 +36,7 @@
       "command": "dotnet",
       "args": [
         "build",
-        "${workspaceFolder}/ApiGateway/ApiGateway.csproj"
+        "${workspaceFolder}/src/ApiGateway/ApiGateway.csproj"
       ],
       "problemMatcher": "$msCompile"
     },

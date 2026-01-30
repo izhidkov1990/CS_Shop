@@ -4,7 +4,7 @@ services:
   apigateway:
     image: apigateway
     build:
-      context: .
-      dockerfile: ApiGateway/Dockerfile
+      context: ..
+      dockerfile: src/ApiGateway/Dockerfile
     ports:
       - 5111:5111

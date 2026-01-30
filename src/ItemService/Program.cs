@@ -6,10 +6,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var solutionRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.FullName;
+var contentRoot = builder.Environment.ContentRootPath;
+var solutionRoot = Directory.GetParent(contentRoot)?.Parent?.FullName
+    ?? Directory.GetParent(contentRoot)?.FullName;
 if (!string.IsNullOrWhiteSpace(solutionRoot))
 {
-    builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Local.json"), optional: true, reloadOnChange: true);
+    var configDir = Path.Combine(solutionRoot, "config");
+    builder.Configuration.AddJsonFile(Path.Combine(configDir, "local.dev.json"), optional: true, reloadOnChange: true);
 }
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 

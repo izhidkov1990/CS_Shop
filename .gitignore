@@ -14,6 +14,8 @@ appsettings.Local.json
 **/appsettings.Local.json
 .env
 .env.local
+/config/*.local.json
+/config/*.dev.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

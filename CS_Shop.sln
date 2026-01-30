@@ -3,19 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthService", "AuthService\AuthService.csproj", "{ED7A7C2A-09C5-4E7D-8F6E-5FA5CF1F32AC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthService", "src\AuthService\AuthService.csproj", "{ED7A7C2A-09C5-4E7D-8F6E-5FA5CF1F32AC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiGateway", "ApiGateway\ApiGateway.csproj", "{4E0F16B7-30E4-485A-A200-110D2EBDDF3D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiGateway", "src\ApiGateway\ApiGateway.csproj", "{4E0F16B7-30E4-485A-A200-110D2EBDDF3D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2FB7445A-EA53-407B-8C4E-ABA62C585B39}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthService.Tests", "AuthService.Tests\AuthService.Tests.csproj", "{9DFA1EE5-1159-4F9C-A1CC-F1CB65CB9738}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthService.Tests", "tests\AuthService.Tests\AuthService.Tests.csproj", "{9DFA1EE5-1159-4F9C-A1CC-F1CB65CB9738}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ItemService", "ItemService\ItemService.csproj", "{24C3AC8C-3956-453F-A877-984BEC0C0847}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ItemService", "src\ItemService\ItemService.csproj", "{24C3AC8C-3956-453F-A877-984BEC0C0847}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{770C60A4-DB18-4698-A871-F8042FF8EA18}"
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "deploy\\docker-compose.dcproj", "{770C60A4-DB18-4698-A871-F8042FF8EA18}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ItemService.Tests", "ItemService.Tests\ItemService.Tests.csproj", "{C4CC9D46-F288-411F-B5D5-DDDEE82B5D19}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ItemService.Tests", "tests\ItemService.Tests\ItemService.Tests.csproj", "{C4CC9D46-F288-411F-B5D5-DDDEE82B5D19}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -106,3 +106,4 @@ Global
 		SolutionGuid = {F0254BC8-34CE-4579-BAC1-633CF5DDC30A}
 	EndGlobalSection
 EndGlobal
+

@@ -72,14 +72,16 @@ Authorization: Bearer <JWT>
   - Response: status message.
 
 ## Local Configuration
-Local secrets live in `AuthService/appsettings.Local.json` and are ignored by git. Fill in:
+Local secrets live in `config/auth.local.json` and are ignored by git. Fill in:
 - `Steam:ApiKey`
-- `Jwt:SecretKey`, `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpireDays`
 - `ConnectionStrings:DefaultConnection`
 - `DevAuth:Enabled`, `DevAuth:SharedKey` (dev only)
 
+JWT settings live in `config/local.dev.json`:
+- `Jwt:SecretKey`, `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpireDays`
+
 ## Docker Configuration
-Docker secrets live in `.env.local` (ignored by git). Fill in:
+Docker secrets live in `deploy/.env.local` (ignored by git). Fill in:
 - `ConnectionStrings__DefaultConnection`
 - `Steam__ApiKey`
 - `Jwt__SecretKey`, `Jwt__Issuer`, `Jwt__Audience`, `Jwt__ExpireDays`

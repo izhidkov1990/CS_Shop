@@ -4,8 +4,8 @@ services:
   apigateway:
     image: apigateway
     build:
-      context: .
-      dockerfile: ApiGateway/Dockerfile
+      context: ..
+      dockerfile: src/ApiGateway/Dockerfile
       args:
         - configuration=Debug
     ports:
