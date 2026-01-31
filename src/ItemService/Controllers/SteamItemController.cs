@@ -27,7 +27,7 @@ namespace ItemService.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpGet]
         [Route("GetSteamItems")]
-        public async Task<ActionResult<IEnumerable<SteamItem>>> GetAllSteamItems([FromQuery] string steamId)
+        public async Task<ActionResult<IEnumerable<SteamItem>>> GetAllSteamItems([FromQuery] string steamId, CancellationToken cancellationToken)
         {
             try
             {
@@ -36,7 +36,7 @@ namespace ItemService.Controllers
                     return BadRequest("steamId is required.");
                 }
 
-                var steamItems = await _steamItemService.GetItemsFromSteamAPI(steamId, AppId.ToString(), ContextId.ToString());
+                var steamItems = await _steamItemService.GetItemsFromSteamAPI(steamId, AppId.ToString(), ContextId.ToString(), cancellationToken);
                 return Ok(steamItems);
             }
             catch (SteamApiException steamApiEx)

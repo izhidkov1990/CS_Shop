@@ -147,6 +147,26 @@
         "AllowAutoRedirect": false,
         "UseTracing": true
       }
+    },
+    {
+      "DownstreamPathTemplate": "/market/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7267
+        }
+      ],
+      "UpstreamPathTemplate": "/market/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Delete" ],
+      "LoadBalancerOptions": {
+        "Type": "LeastConnection"
+      },
+      "HttpClientOptions": {
+        "UseCookieContainer": true,
+        "AllowAutoRedirect": false,
+        "UseTracing": true
+      }
     }
   ],
   "GlobalConfiguration": {

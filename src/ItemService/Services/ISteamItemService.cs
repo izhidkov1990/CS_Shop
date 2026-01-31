@@ -4,7 +4,7 @@ namespace ItemService.Services
 {
     public interface ISteamItemService
     {
-        Task<List<SteamItem>> GetItemsFromSteamAPI(string steamId, string appid, string contextid);
+        Task<List<SteamItem>> GetItemsFromSteamAPI(string steamId, string appid, string contextid, CancellationToken cancellationToken = default);
 
         Task ClearCacheAsync(string steamId, string appid, string contextid);
     }

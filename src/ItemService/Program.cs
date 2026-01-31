@@ -1,8 +1,12 @@
+using ItemService.Data;
 using ItemService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +21,11 @@ if (!string.IsNullOrWhiteSpace(solutionRoot))
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 builder.Services.AddControllers();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -87,8 +96,14 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("SteamInventory", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 builder.Services.AddTransient<ISteamItemService, SteamItemService>();
+builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
+builder.Services.AddDbContext<MarketDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
@@ -103,11 +118,27 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    using (var scope = app.Services.CreateScope())
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        try
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<MarketDbContext>();
+            dbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database migration failed.");
+            throw;
+        }
+    }
+
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
+app.UseResponseCompression();
 
 app.UseAuthentication();
 app.UseAuthorization();
