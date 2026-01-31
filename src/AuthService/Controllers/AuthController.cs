@@ -48,6 +48,7 @@ namespace AuthService.Controllers
                 : configuredCallbackUrl;
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("callback")]
         public async Task<IActionResult> CallbackAsync()
         {

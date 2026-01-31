@@ -7,7 +7,7 @@
 
 ## Auth Flow (Steam)
 1) Frontend navigates to `GET /auth/login` (preferably via the gateway).
-2) Steam login redirects back to `GET /auth/callback`.
+2) Steam login redirects back to the auth service.
 3) Auth redirects to the frontend with `?token=JWT`.
 4) Frontend stores the token and uses it as a Bearer token.
 
@@ -44,10 +44,6 @@ Authorization: Bearer <JWT>
   - Starts Steam OAuth flow.
   - Response: redirect.
 
-- `GET /auth/callback`
-  - Steam OAuth callback.
-  - Response: redirect to frontend with `token` query param.
-
 - `GET /auth/getuserbyid`
   - Auth required.
   - Response: `UserDTO`.
@@ -66,10 +62,6 @@ Authorization: Bearer <JWT>
 - `GET /SteamItem/GetSteamItems?steamId=...`
   - Auth required.
   - Response: list of Steam assets.
-
-- `POST /SteamItem/ClearCache?steamId=...`
-  - Auth required.
-  - Response: status message.
 
 ## Local Configuration
 Local secrets live in `config/auth.local.json` and are ignored by git. Fill in:

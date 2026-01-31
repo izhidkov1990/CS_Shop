@@ -51,6 +51,7 @@ namespace ItemService.Controllers
             }
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPost]
         [Route("ClearCache")]
